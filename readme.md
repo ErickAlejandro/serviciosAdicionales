@@ -1,102 +1,140 @@
 # Documentación del Proyecto: Servicio de Geolocalización
 
 ## Descripción General
-Este proyecto es un programa sencillo en Python cuyo objetivo principal es realizar la geolocalización del equipo en el que se encuentra instalado. El programa obtiene y muestra la ubicación basada en la IP del dispositivo, así como el nombre del equipo y la fecha y hora actual.
+Este proyecto es un programa en Python diseñado para realizar la geolocalización del equipo donde se encuentra instalado. No cuenta con una interfaz gráfica y funciona mediante la ejecución del archivo `serviceLocation.py` desde la consola.
 
-### Ejecución del Programa
-El programa no cuenta con una interfaz de usuario. Se ejecuta desde la terminal utilizando el siguiente comando:
+Al ejecutarse, el programa obtiene la ubicación basada en la dirección IP, el nombre del equipo y la fecha y hora actuales, mostrando esta información en pantalla y registrándola en un archivo de log.
+
+## Características Principales
+1. **Obtención de información del equipo**:
+   - Nombre del equipo mediante `socket.gethostname()`.
+   - Ubicación basada en IP utilizando la biblioteca `geocoder`.
+   - Fecha y hora del registro.
+
+2. **Registro en archivo de log**:
+   - La información se almacena en el archivo `logLocationPc.txt`.
+
+3. **Ejecución continua**:
+   - El programa consulta y registra la información cada 5 segundos.
+
+## Prerrequisitos
+1. Tener Python instalado (se recomienda Python 3.8 o superior).
+2. Crear y activar un entorno virtual.
+
+### Creación de un Entorno Virtual
+```bash
+# Crear el entorno virtual
+python -m venv venv
+
+# Activar el entorno virtual
+# En Windows:
+venv\Scripts\activate
+# En macOS/Linux:
+source venv/bin/activate
+```
+
+### Instalación de Dependencias
+Asegúrate de tener el archivo `requirements.txt` en el mismo directorio que el script.
+
+Ejecuta el siguiente comando para instalar las dependencias necesarias:
+```bash
+pip install -r requirements.txt
+```
+
+Contenido del archivo `requirements.txt`:
+```
+certifi==2023.7.22
+charset-normalizer==3.2.0
+click==8.1.7
+colorama==0.4.6
+decorator==5.1.1
+future==0.18.3
+geocoder==1.38.1
+idna==3.4
+ratelim==0.1.6
+requests==2.31.0
+schedule==1.2.0
+six==1.16.0
+urllib3==2.0.4
+```
+
+## Ejecución del Programa
+Para ejecutar el programa, abre una terminal, navega al directorio del proyecto y utiliza el siguiente comando:
 ```bash
 python serviceLocation.py
 ```
-Al ejecutarse, el programa muestra un mensaje similar al siguiente:
+
+### Ejemplo de Salida
+En consola:
 ```
 Nombre de la Computadora: ERI
 Ubicación: <[OK] Ipinfo - Geocode [Cuenca, Azuay, EC]> - Fecha y Hora: 2025-01-21 12:09:47.897739
 ```
 
----
+En el archivo `logLocationPc.txt`:
+```
+Nombre de la Computadora: ERI
+Ubicación: <[OK] Ipinfo - Geocode [Cuenca, Azuay, EC]> - Fecha y Hora: 2025-01-21 12:09:47.897739
+```
 
-## Prerrequisitos
+## Detalles del Archivo `serviceLocation.py`
 
-### 1. Instalación de Python
-- Asegúrate de tener Python (versión 3.8 o superior) instalado en tu sistema.
-- Descárgalo desde [python.org](https://www.python.org/) si no lo tienes instalado.
+### Funcionalidades del Archivo
+1. **Obtención de Ubicación**:
+   - Utiliza la biblioteca `geocoder` para obtener información basada en la IP.
+   - Maneja casos en los que no se puede obtener la ubicación.
 
-### 2. Configuración del Entorno Virtual
-Es recomendable utilizar un entorno virtual para manejar las dependencias del proyecto.
+2. **Información del Equipo**:
+   - Obtiene el nombre del equipo mediante `socket.gethostname()`.
 
-1. **Crear el Entorno Virtual:**
-   - Navega al directorio del proyecto en la terminal.
-   - Ejecuta el siguiente comando:
-     ```bash
-     python -m venv venv
-     ```
+3. **Registro de Datos**:
+   - Escribe en el archivo `logLocationPc.txt` la información del equipo, ubicación y fecha/hora.
 
-2. **Activar el Entorno Virtual:**
-   - En **Windows**:
-     ```bash
-     venv\Scripts\activate
-     ```
-   - En **macOS/Linux**:
-     ```bash
-     source venv/bin/activate
-     ```
+4. **Ejecución Continua**:
+   - Solicita información cada 5 segundos.
 
-3. **Actualizar `pip`:**
-   - Asegúrate de tener la última versión de `pip`:
-     ```bash
-     pip install --upgrade pip
-     ```
+### Fragmento Principal del Código
+```python
+import geocoder
+import time
+import datetime
+import socket
 
-### 3. Instalación de Dependencias
+# OBTENER INFORMACION NECESARIA PARA EL LOG
+def obtener_ubicacion():
+    ubicacion = geocoder.ip('me')
+    if ubicacion.ok:
+        return ubicacion, datetime.datetime.now(), socket.gethostname()
+    else:
+        return "No se pudo obtener la ubicación.", None, None
 
-El proyecto utiliza algunas bibliotecas externas que deben ser instaladas mediante el archivo `requirements.txt`. Sigue estos pasos:
+if __name__ == "__main__":
+    while True:
+        ubicacion, fecha_hora, nombre_computadora = obtener_ubicacion()
+        
+        if ubicacion:
+            print(f"Nombre de la Computadora: {nombre_computadora}")
+            print(f"Ubicación: {ubicacion} - Fecha y Hora: {fecha_hora}")
 
-1. **Archivo `requirements.txt`:**
-   Asegúrate de que el archivo contenga lo siguiente:
-   ```
-   requests
-   ```
+            with open("logLocationPc.txt", "a") as archivo:
+                archivo.write(f"Nombre de la Computadora: {nombre_computadora}\n")
+                archivo.write(f"Ubicación: {ubicacion} - Fecha y Hora: {fecha_hora}\n\n")
+        else:
+            print("No se pudo obtener la ubicación.")
+            with open("logLocationPc.txt", "a") as archivo:
+                archivo.write("No se pudo obtener la ubicación.\n")
+        
+        # Espera 5 segundos antes de la siguiente solicitud
+        time.sleep(5)
+```
 
-2. **Instalar las Dependencias:**
-   Con el entorno virtual activado, ejecuta:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Verificar la Instalación:**
-   - Para confirmar que las bibliotecas se instalaron correctamente, puedes listar los paquetes instalados:
-     ```bash
-     pip freeze
-     ```
-
----
-
-## Estructura del Proyecto
-El proyecto contiene los siguientes archivos principales:
-
-1. **`serviceLocation.py`:**
-   - Es el archivo principal del programa.
-   - Contiene la lógica para obtener el nombre del equipo, la ubicación basada en la IP y la fecha y hora actual.
-
-2. **`requirements.txt`:**
-   - Archivo de dependencias necesarias para el programa.
+### Dependencias Principales
+El script utiliza:
+- `geocoder`: Para obtener la ubicación.
+- `socket`: Para obtener el nombre del equipo.
+- `datetime`: Para registrar la fecha y hora actual.
 
 ---
 
-## Ejecución Paso a Paso
-1. Clona o descarga el proyecto en tu sistema.
-2. Configura y activa un entorno virtual.
-3. Instala las dependencias usando `requirements.txt`.
-4. Ejecuta el programa desde la terminal:
-   ```bash
-   python serviceLocation.py
-   ```
-5. Visualiza la información de geolocalización y otros detalles en la consola.
-
----
-
-## Notas Adicionales
-- **API Utilizada:** El programa utiliza el servicio de [Ipinfo.io](https://ipinfo.io/) para obtener la información de geolocalización.
-- **Módulos Incluidos:** El código incluye módulos integrados de Python para obtener el nombre del equipo y la fecha y hora actual.
+Si necesitas agregar más funcionalidades o realizar modificaciones, asegúrate de actualizar también esta documentación.
 
